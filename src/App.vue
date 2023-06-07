@@ -7,37 +7,26 @@ const name = ref("");
 const input_content = ref("");
 const input_category = ref(null);
 
+//status 是提醒文字reminder的 class
 const status = ref("");
 
-console.log(status.value);
 
-// 有todos_asc時，computed => 後面如果再加上 {} 會變成 undefined 不知為何
-// 計算屬性 computed：若有需把 data 資料放在畫面上許多地方，又必須做一些處理後再綁定，就可以直接把處理資料的邏輯寫在計算屬性中，
-// sort()用匿名函式當排序條件
-// 如果是 return b-a 表示排序上是倒著排，也就是比較晚新增的項目，會排在陣列的最前面。
-
-// const todos_asc = computed(() => 
-//   todos.value.sort((a,b) => {
-//       return b.createdAt - a.createdAt  
-//     })
-// )
-
-// computed 一定會歸還一個值
-// computed 會將結果暫存起來
-// 可能因為會有值產生出來，原版教學才會用變數去存取去接起來，單純當個容器
-// 但其實主要只是用它去 sort() 陣列 todos 的排序，sort()會影響原陣列，所以 computed 執行後，陣列 todos 就已經改變了
-// 並不需要拿 todos_asc 這個變數額外做什麼事情
-computed(() => {
+// sort()裡面放函式當排序驗證條件
+// 若 b-a 計算結果為「正值」，陣列排序就倒著排，意即較晚新增的todo，會排在陣列的最前面。
+// 透過 todo 的createdAt 的時間毫秒數去做數字加減
+const todos_asc = computed(() =>
   todos.value.sort((a,b) => {
-      return b.createdAt - a.createdAt  
+      return b.createdAt - a.createdAt
     })
-})
+)
+
 
 const addTodo = () => { 
   // trim 是排除空格，若排除空格後仍為空，表示沒有輸入東西
   // 或是沒有選擇待辦類別 
   // 其中之一的情況就什麼都不做
   if(input_content.value.trim() === '' || input_category.value === null){
+    //切換status的值
     status.value = "active";
     return;
   }
@@ -65,11 +54,20 @@ const removeTodo = todo => {
   todos.value = todos.value.filter(t => t.createdAt !== todo.createdAt)
 }
 
+//清除全部清單項目
+const clearAll = () =>{
+  todos.value =[];
+}
+
+// 清除已完成的項目，意即只列出未完成的項目
+const clearCompleted = () =>{
+  todos.value = todos.value.filter(todo => todo.done == false)
+}
+
 // 只要陣列 todos 有異動，也就是新增或是刪除項目時，就把陣列內容存進localStorage
-// 要記得轉純字串
-// 但是這條 watch 是寫在funciton addToDo 外面，陣列 push 時 watch 感測不到
-// 必須加上options條件 deep:true 
-// 表示無論 todos 深處何處，即使是被包在 function 裡面的 todos，只要 todos 有異動，deep 都會抓到，然後觸發 watch 
+// 這條 watch 是寫在 funciton addToDo 外面，裡面 todos 做 push 時，watch 感測不到
+// 必須加上 options 條件 deep:true 
+// 表示無論 todos 在何處，即使是被包在 function 裡面，只要 todos 有異動，deep 都會抓到，然後觸發 watch 
 watch(todos, newVal => {
   localStorage.setItem("todos", JSON.stringify(newVal));
 }, { deep: true })
@@ -94,21 +92,20 @@ onMounted(() =>{
 
 <template>
 
- <main class="app">
+ <main class="container">
     <section class="greeting">
       <h2 class="title">
-        What's up, <input type="text" placeholder="Name Here" v-model="name">
+        What's up, <input type="text" placeholder="輸入名字" v-model="name">
       </h2>
     </section>
     <section class="create-todo">
-      <h3>Create a ToDo</h3>
       <form @submit.prevent="addTodo">
-        <h4>What's on your todo list?</h4>
+        <h4>建立待辦事項</h4>
         <input 
           type="text" 
-          placeholder="e.g. make a video" 
+          placeholder="例如：寫一篇筆記" 
           v-model="input_content" />
-        <h4>Pick a Category</h4>
+        <h4>選擇類別</h4>
         
         <div class="options">
 
@@ -133,13 +130,15 @@ onMounted(() =>{
           </label>
           
         </div>
-        <input type="submit" value="Add todo"/>
-        <p :class="`reminder ${status}`">輸入欄位不能為空。記得要選 工作 / 私人</p>
+        <button class="add-todo"><span>新增</span><font-awesome-icon icon="fa-solid fa-circle-plus" /></button>
+        <p :class="`reminder ${status}`">請輸入待辦事項＋選擇類別</p>
       </form> 
     </section>
     
     <section class="todo-list">
-      <h3>TODO LIST</h3>
+      <h4>待辦清單</h4>
+      <button class="clear" @click="clearAll()">清除全部</button>
+      <button class="clear completed" @click="clearCompleted()">清除已完成項目</button>
       <div class="list">
         <!-- 引號外雙內單。
           v-for 渲染列表，
@@ -147,7 +146,7 @@ onMounted(() =>{
           因為我們要動態判斷後，再放一個 class 上去，
           todo-item 是固定的 class 名稱，後面要再放一個樣式名稱叫做 done，
           只有當 todo.done 取到的值為 true 時，才會放上 done 這個樣式名，也就是待辦事項完成時才會有的樣式。 -->
-        <div v-for="todo in todos" :class="`todo-item ${todo.done && 'done'}`">
+        <div v-for="todo in todos_asc" :class="`todo-item ${todos_asc.done && 'done'}`">
 
           <label>
             <input type="checkbox" v-model="todo.done" />
@@ -161,7 +160,7 @@ onMounted(() =>{
           </div>
 
           <div class="actions">
-            <button class="delete" @click="removeTodo(todo)">Delete</button>
+            <button class="delete" @click="removeTodo(todo)"><font-awesome-icon icon="fa-regular fa-trash-can" /></button>
           </div>
         </div>
       </div>
