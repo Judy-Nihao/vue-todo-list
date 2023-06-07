@@ -226,9 +226,13 @@ input:checked ~ .bubble::after {
 	transition: 0.2s ease-in-out;
 }
 
-.create-todo .add-todo:hover {
-	opacity: 0.75;
-}
+/* 只有電腦版才 hover  */
+@media (any-hover: hover) {
+	.create-todo .add-todo:hover {
+		opacity: 0.75;
+	}
+  }
+  
 
 .create-todo .add-todo:active {
 	font-size: 1.25rem;
@@ -294,9 +298,11 @@ input:checked ~ .bubble::after {
 	transition: 0.2s ease-in-out;
 }
 
-.todo-item .actions .delete:hover {
-	opacity: 0.75;
-}
+@media (any-hover: hover) {
+	.todo-item .actions .delete:hover {
+		opacity: 0.75;
+	}
+  }
 
 .todo-item .actions .delete:active {
 	scale: 1.25;
@@ -312,9 +318,13 @@ input:checked ~ .bubble::after {
 	cursor: pointer;
 }
 
-.clear:hover{
-	opacity: 0.75;
-}
+
+@media (any-hover: hover) {
+	.clear:hover{
+		opacity: 0.75;
+	}
+  }
+  
 
 /* 按鈕：清除已完成項目 */
 .clear.completed{
